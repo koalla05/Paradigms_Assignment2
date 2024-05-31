@@ -1,0 +1,3 @@
+C:/Users/kovko/CLionProjects/Paradigms_Assignment2/cmake-build-debug/CMakeFiles/Paradigms_Assignment2.dir
+C:/Users/kovko/CLionProjects/Paradigms_Assignment2/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/kovko/CLionProjects/Paradigms_Assignment2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
