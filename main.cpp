@@ -149,6 +149,24 @@ public:
         }
         else cout << "Error opening file";
     }
+
+    void replacement(int line, int index, char* userText) {
+        int k = 0;
+        int sizeInput = strlen(userText);
+        int sizeText = strlen(text);
+        for (int i = 0; i < sizeText; i++) {
+            if (k==line) {
+                for (int m = i + index; m < i + index + sizeInput; m++) {
+                    text[m] = userText[m - i - index];
+                }
+                break;
+            }
+            else {
+                if (text[i] == '\n') {k++;}
+            }
+        }
+        free(userText);
+    }
 };
 
 
@@ -185,15 +203,23 @@ int main()
             case 5:
                 text.show();
                 break;
-            case 6:
+            case 6: {
                 int line, index;
                 cout << "\nChoose line and index: "<<endl;
                 cin >> line >> index;
                 fflush(stdin);
                 text.insert(line, index, getUserText());
                 break;
+            }
             case 7:
                 text.search(getUserText());
+                break;
+            case 14:
+                int line1, index1;
+                cout << "\nChoose line and index: "<<endl;
+                cin >> line1 >> index1;
+                fflush(stdin);
+                text.replacement(line1, index1, getUserText());
                 break;
             default:
                 cout << "This command is not avaible" <<endl;
