@@ -198,6 +198,9 @@ public:
                 for (int m = i + index; m < i + index + number; m++) {
                     buffer[m - i - index] = text[m];
                 }
+                for (int j = number; j < strlen(buffer); j++) {
+                    buffer[j] = '\0';
+                }
                 break;
             }
             else {
@@ -205,6 +208,10 @@ public:
             }
         }
         cout << buffer << endl;
+    }
+
+    char* getBuffer() {
+        return buffer;
     }
 };
 
@@ -261,16 +268,23 @@ int main()
                 text.del(line2, index2, number);
                 break;
             case 11:
-                //cut
+                int line4, index4, number2;
+                cout << "Choose line, index and number of symbols: "<<endl;
+                cin >> line4 >> index4 >> number2;
+                text.copy(line4, index4, number2);
+                text.del(line4, index4, number2);
                 break;
             case 12:
                 int line3, index3, number1;
-            cout << "Choose line, index and number of symbols: "<<endl;
-            cin >> line3 >> index3 >> number1;
+                cout << "Choose line, index and number of symbols: "<<endl;
+                cin >> line3 >> index3 >> number1;
                 text.copy(line3, index3, number1);
                 break;
             case 13:
-                //paste
+                int line5, index5;
+                cout << "Choose line, index: "<<endl;
+                cin >> line5 >> index5;
+                text.insert(line5, index5, text.getBuffer());
                 break;
             case 14:
                 int line1, index1;
