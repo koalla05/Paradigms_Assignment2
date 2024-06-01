@@ -33,9 +33,11 @@ char* getUserText() {
 
 class Text {
     char* text;
+    char* buffer;
 public:
     Text() {
         text = static_cast<char *>(calloc(10, sizeof(char)));
+        buffer = static_cast<char *>(calloc(10, sizeof(char)));
     }
     void append(char* userText) {
         if (strlen(text) + strlen(userText) > sizeof(text)) {
@@ -186,6 +188,24 @@ public:
             }
         }
     }
+
+    void copy(int line, int index, int number) {
+        int k = 0;
+        //char* buffer = static_cast<char *>(calloc(10, sizeof(char)));
+        int sizeText = strlen(text);
+        for (int i = 0; i < sizeText; i++) {
+            if (k==line) {
+                for (int m = i + index; m < i + index + number; m++) {
+                    buffer[m - i - index] = text[m];
+                }
+                break;
+            }
+            else {
+                if (text[i] == '\n') {k++;}
+            }
+        }
+        cout << buffer << endl;
+    }
 };
 
 
@@ -239,6 +259,18 @@ int main()
                 cout << "Choose line, index and number of symbols: "<<endl;
                 cin >> line2 >> index2 >> number;
                 text.del(line2, index2, number);
+                break;
+            case 11:
+                //cut
+                break;
+            case 12:
+                int line3, index3, number1;
+            cout << "Choose line, index and number of symbols: "<<endl;
+            cin >> line3 >> index3 >> number1;
+                text.copy(line3, index3, number1);
+                break;
+            case 13:
+                //paste
                 break;
             case 14:
                 int line1, index1;
