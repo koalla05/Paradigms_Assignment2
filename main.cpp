@@ -167,6 +167,25 @@ public:
         }
         free(userText);
     }
+
+    void del(int line, int index, int number){
+        int k = 0;
+        int sizeText = strlen(text);
+        if (sizeText + number > sizeof(text)) {
+            text = static_cast<char *>(realloc(text, (strlen(text) + number) * 2 * sizeof(char)));
+        }
+        for (int i = 0; i < sizeText; i++) {
+            if (k==line) {
+                for (int m = i + index + number; m < i + sizeText + number + index; m++) {
+                    text[m - number] = text[m];
+                }
+                break;
+            }
+            else {
+                if (text[i] == '\n') {k++;}
+            }
+        }
+    }
 };
 
 
@@ -213,6 +232,13 @@ int main()
             }
             case 7:
                 text.search(getUserText());
+                break;
+
+            case 8:
+                int line2, index2, number;
+                cout << "Choose line, index and number of symbols: "<<endl;
+                cin >> line2 >> index2 >> number;
+                text.del(line2, index2, number);
                 break;
             case 14:
                 int line1, index1;
