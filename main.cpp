@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string.h>
 #include <fstream>
+#include <stack>
+#include <queue>
 using namespace std;
 
 char* getUserText() {
@@ -34,17 +36,25 @@ char* getUserText() {
 class Text {
     char* text;
     char* buffer;
+    stack<char*> undoStack;
+    queue<char*> redoStack;
 public:
     Text() {
         text = static_cast<char *>(calloc(10, sizeof(char)));
         buffer = static_cast<char *>(calloc(10, sizeof(char)));
     }
     void append(char* userText) {
+        char* undoCopy = new char[strlen(text) + 1];
+        strcpy(undoCopy, text);
+        undoStack.push(undoCopy);
         if (strlen(text) + strlen(userText) > sizeof(text)) {
-            text = static_cast<char *>(realloc(text, (strlen(text) + strlen(userText)) * 2 * sizeof(char)));
+            text = static_cast<char *>(realloc(text, (strlen(text) + strlen(userText)) * sizeof(char)));
         }
         strcat(text, userText);
         free(userText);
+        char* redoCopy = new char[strlen(text) + 1];
+        strcpy(redoCopy, text);
+        redoStack.push(redoCopy);
     }
 
     void show() const {
@@ -213,6 +223,25 @@ public:
     char* getBuffer() {
         return buffer;
     }
+
+    void undo() {
+        if (!undoStack.empty()) {
+            free(text);
+            text = undoStack.top();
+            undoStack.pop();
+        }
+    }
+
+    void redo() {
+        if (!redoStack.empty()) {
+            free(text);
+            text = redoStack.front();
+            redoStack.pop();
+        }
+    }
+    ~Text() {
+        free(text);
+    }
 };
 
 
@@ -266,6 +295,12 @@ int main()
                 cout << "Choose line, index and number of symbols: "<<endl;
                 cin >> line2 >> index2 >> number;
                 text.del(line2, index2, number);
+                break;
+            case 9:
+                text.undo();
+                break;
+            case 10:
+                text.redo();
                 break;
             case 11:
                 int line4, index4, number2;
