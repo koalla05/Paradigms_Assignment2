@@ -37,7 +37,7 @@ class Text {
     char* text;
     char* buffer;
     stack<char*> undoStack;
-    queue<char*> redoStack;
+    stack<char*> redoQueue;
 public:
     Text() {
         text = static_cast<char *>(calloc(10, sizeof(char)));
@@ -47,14 +47,12 @@ public:
         char* undoCopy = new char[strlen(text) + 1];
         strcpy(undoCopy, text);
         undoStack.push(undoCopy);
+
         if (strlen(text) + strlen(userText) > sizeof(text)) {
             text = static_cast<char *>(realloc(text, (strlen(text) + strlen(userText)) * sizeof(char)));
         }
         strcat(text, userText);
         free(userText);
-        char* redoCopy = new char[strlen(text) + 1];
-        strcpy(redoCopy, text);
-        redoStack.push(redoCopy);
     }
 
     void show() const {
@@ -62,14 +60,22 @@ public:
     }
 
     void newline() const {
+        // char* undoCopy = new char[strlen(text) + 1];
+        // strcpy(undoCopy, text);
+        // undoStack.push(undoCopy);
+
         strcat(text, "\n");
     }
 
     void insert(int line, int index, char* userText) {
+        char* undoCopy = new char[strlen(text) + 1];
+        strcpy(undoCopy, text);
+        undoStack.push(undoCopy);
+
         int k = 0;
 
         if (strlen(text) + strlen(userText) > sizeof(text)) {
-            text = (char*)realloc(text, (strlen(text) + strlen(userText))*2 * sizeof(char));
+            text = (char*)realloc(text, (strlen(text) + strlen(userText)) * sizeof(char));
         }
 
         int sizeInput = strlen(userText);
@@ -163,6 +169,10 @@ public:
     }
 
     void replacement(int line, int index, char* userText) {
+        char* undoCopy = new char[strlen(text) + 1];
+        strcpy(undoCopy, text);
+        undoStack.push(undoCopy);
+
         int k = 0;
         int sizeInput = strlen(userText);
         int sizeText = strlen(text);
@@ -181,10 +191,14 @@ public:
     }
 
     void del(int line, int index, int number){
+        char* undoCopy = new char[strlen(text) + 1];
+        strcpy(undoCopy, text);
+        undoStack.push(undoCopy);
+
         int k = 0;
         int sizeText = strlen(text);
         if (sizeText + number > sizeof(text)) {
-            text = static_cast<char *>(realloc(text, (strlen(text) + number) * 2 * sizeof(char)));
+            text = static_cast<char *>(realloc(text, (strlen(text) + number) * sizeof(char)));
         }
         for (int i = 0; i < sizeText; i++) {
             if (k==line) {
@@ -217,7 +231,6 @@ public:
                 if (text[i] == '\n') {k++;}
             }
         }
-        cout << buffer << endl;
     }
 
     char* getBuffer() {
@@ -226,17 +239,31 @@ public:
 
     void undo() {
         if (!undoStack.empty()) {
+            char* redoCopy = new char[strlen(text) + 1];
+            strcpy(redoCopy, text);
+            redoQueue.push(redoCopy);
+
             free(text);
             text = undoStack.top();
             undoStack.pop();
         }
+        else {
+            cout <<"You are stupid" <<endl;
+        }
     }
 
     void redo() {
-        if (!redoStack.empty()) {
+        if (!redoQueue.empty()) {
+            char* undoCopy = new char[strlen(text) + 1];
+            strcpy(undoCopy, text);
+            undoStack.push(undoCopy);
+
             free(text);
-            text = redoStack.front();
-            redoStack.pop();
+            text = redoQueue.top();
+            redoQueue.pop();
+        }
+        else {
+            cout <<"You are stupid" <<endl;
         }
     }
     ~Text() {
@@ -309,13 +336,13 @@ int main()
                 text.copy(line4, index4, number2);
                 text.del(line4, index4, number2);
                 break;
-            case 12:
+            case 13:
                 int line3, index3, number1;
                 cout << "Choose line, index and number of symbols: "<<endl;
                 cin >> line3 >> index3 >> number1;
                 text.copy(line3, index3, number1);
                 break;
-            case 13:
+            case 12:
                 int line5, index5;
                 cout << "Choose line, index: "<<endl;
                 cin >> line5 >> index5;
