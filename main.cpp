@@ -3,7 +3,7 @@
 #include <string.h>
 #include <fstream>
 #include <stack>
-#include <queue>
+#include <unordered_map>
 using namespace std;
 
 char* getUserText() {
@@ -36,29 +36,40 @@ char* getUserText() {
 class Text {
     char* text;
     char* buffer;
-    stack<char*> undoStack;
-    stack<char*> redoQueue;
-    int cursor[2];
+    int currentLine;
+    stack<char*> undoStackText;
+    stack<char*> redoStackText;
+    stack<unordered_map<int, int>> undoStackCursor;
+    stack<unordered_map<int, int>> redoStackCursor;
+    unordered_map<int, int> cursor;
+
 public:
     Text() {
         text = static_cast<char *>(calloc(10, sizeof(char)));
         buffer = static_cast<char *>(calloc(10, sizeof(char)));
-        cursor[0] = 0; //line
-        cursor[1] = 0;  //index
+        currentLine = 0;
+        cursor[currentLine] = 0;
     }
-    void pushStack() {
+    void pushStackText() {
         char* undoCopy = new char[strlen(text) + 1];
         strcpy(undoCopy, text);
-        undoStack.push(undoCopy);
+        undoStackText.push(undoCopy);
     }
+
+    void pushStackCursor() {
+        unordered_map<int, int> copyCursor(cursor);
+        undoStackCursor.push(copyCursor);
+    }
+
     void append(char* userText) {
-        pushStack();
+        pushStackText();
+        pushStackCursor();
 
         if (strlen(text) + strlen(userText) > sizeof(text)) {
-            text = static_cast<char *>(realloc(text, (strlen(text) + strlen(userText)) * sizeof(char)));
+            text = static_cast<char *>(realloc(text, (strlen(text) + strlen(userText)+1) * sizeof(char)));
         }
         strcat(text, userText);
-        cursor[1] += strlen(userText);
+        cursor[currentLine] += strlen(userText);
         free(userText);
     }
 
@@ -67,38 +78,43 @@ public:
     }
 
     void newline() {
-        pushStack();
+        if (strlen(text) + 1 >sizeof(text)) {
+            text = static_cast<char *>(realloc(text, (strlen(text) + 2) * sizeof(char)));
+        }
+        pushStackText();
+        pushStackCursor();
         strcat(text, "\n");
-        cursor[0] += 1;
-        cursor[1] -= cursor[1];
+        currentLine++;
+        cursor[currentLine] = 0;
     }
 
     void insert(int line, int index, char* userText) {
-        pushStack();
-        int k = 0;
-
+        pushStackText();
+        pushStackCursor();
+        int numberOfSymbols = 0;
+        int totalSymbols = 0;
         if (strlen(text) + strlen(userText) > sizeof(text)) {
-            text = (char*)realloc(text, (strlen(text) + strlen(userText)) * sizeof(char));
+            text = (char*)realloc(text, (strlen(text) + strlen(userText) + 1) * sizeof(char));
         }
 
         int sizeInput = strlen(userText);
-        int sizeText = strlen(text);
 
-        for (int i = 0; i < sizeText; i++) {
-            if (k==line) {
-                for (int j = sizeText + sizeInput; j > i + index; j--) {
-                    text[j] = text[j - sizeInput];
-                }
-                for (int m = i + index; m < i + index + sizeInput; m++) {
-                    text[m] = userText[m - i - index];
-                }
-                break;
-            }
-            else {
-                if (text[i] == '\n') {k++;}
-            }
+        for (int i = 0; i < line; i++) {
+            numberOfSymbols += cursor[i] + 1; //+1 for "\n"
         }
-        //free(userText);
+        totalSymbols = numberOfSymbols;
+        for (int i = line; i <=currentLine; i++) {
+             totalSymbols += cursor[i] + 1;
+        }
+
+        for (int i = totalSymbols + sizeInput - 1; i >= numberOfSymbols + sizeInput + index; i--) {
+            text[i] = text[i-sizeInput];
+        }
+
+        for (int i = numberOfSymbols + index; i < numberOfSymbols + index + sizeInput; i++) {
+            text[i] = userText[i - numberOfSymbols - index];
+        }
+        cursor[line] += sizeInput;
     }
 
     void search(char* userText) {
@@ -171,64 +187,61 @@ public:
     }
 
     void replacement(int line, int index, char* userText) {
-        pushStack();
+        pushStackText();
+        pushStackCursor();
 
-        int k = 0;
+        int numberOfSymbols= 0;
         int sizeInput = strlen(userText);
-        int sizeText = strlen(text);
-        for (int i = 0; i < sizeText; i++) {
-            if (k==line) {
-                for (int m = i + index; m < i + index + sizeInput; m++) {
-                    text[m] = userText[m - i - index];
-                }
-                break;
-            }
-            else {
-                if (text[i] == '\n') {k++;}
-            }
+
+        if (strlen(text) + sizeInput > sizeof(text)) {
+            text = (char*)realloc(text, (strlen(text) + sizeInput + 1) * sizeof(char));
+        }
+
+
+        for (int i = 0; i < line; i++) {
+            numberOfSymbols += cursor[i] + 1; //+1 for "\n"
+        }
+        for (int i = numberOfSymbols + index; i < numberOfSymbols + index + sizeInput; i++) {
+            text[i] = userText[i - numberOfSymbols - index];
         }
         free(userText);
     }
 
     void del(int line, int index, int number){
-        pushStack();
+        pushStackText();
+        pushStackCursor();
 
-        int k = 0;
+        int numberOfSymbols = 0;
+        int totalSymbols = 0;
         int sizeText = strlen(text);
         if (sizeText + number > sizeof(text)) {
             text = static_cast<char *>(realloc(text, (strlen(text) + number) * sizeof(char)));
         }
-        for (int i = 0; i < sizeText; i++) {
-            if (k==line) {
-                for (int m = i + index + number; m < i + sizeText + number + index; m++) {
-                    text[m - number] = text[m];
-                }
-                break;
-            }
-            else {
-                if (text[i] == '\n') {k++;}
-            }
+        for (int i = 0; i < line; i++) {
+            numberOfSymbols += cursor[i] + 1; //+1 for "\n"
         }
+        totalSymbols = numberOfSymbols;
+        for (int i = line; i <=currentLine; i++) {
+            totalSymbols += cursor[i] + 1;
+        }
+        for (int i = numberOfSymbols + index + number; i < totalSymbols + number; i++) {
+            text[i - number] = text[i];
+        }
+        cursor[line] -=number;
     }
 
     void copy(int line, int index, int number) {
-        buffer = static_cast<char *>(realloc(buffer, (strlen(text) + 1) * sizeof(char)));
-        int k = 0;
-        int sizeText = strlen(text);
-        for (int i = 0; i < sizeText; i++) {
-            if (k==line) {
-                for (int m = i + index; m < i + index + number; m++) {
-                    buffer[m - i - index] = text[m];
-                }
-                for (int j = number; j < strlen(buffer); j++) {
-                    buffer[j] = '\0';
-                }
-                break;
-            }
-            else {
-                if (text[i] == '\n') {k++;}
-            }
+        buffer = static_cast<char *>(realloc(buffer, (number + 1) * sizeof(char)));
+        int numberOfSymbols = 0;
+
+        for (int i = 0; i < line; i++) {
+            numberOfSymbols += cursor[i] + 1; //+1 for "\n"
         }
+
+        for (int i = numberOfSymbols + index; i < numberOfSymbols + index + number; i++) {
+            buffer[i-numberOfSymbols-index] = text[i];
+        }
+        buffer[number] = '\0';
     }
 
     char* getBuffer() {
@@ -236,14 +249,19 @@ public:
     }
 
     void undo() {
-        if (!undoStack.empty()) {
+        if (!undoStackText.empty()) {
             char* redoCopy = new char[strlen(text) + 1];
             strcpy(redoCopy, text);
-            redoQueue.push(redoCopy);
+            redoStackText.push(redoCopy);
+
+            unordered_map<int, int> copyCursor(cursor);
+            redoStackCursor.push(copyCursor);
 
             free(text);
-            text = undoStack.top();
-            undoStack.pop();
+            text = undoStackText.top();
+            cursor = undoStackCursor.top();
+            undoStackText.pop();
+            undoStackCursor.pop();
         }
         else {
             cout <<"You are stupid" <<endl;
@@ -251,26 +269,23 @@ public:
     }
 
     void redo() {
-        if (!redoQueue.empty()) {
-            // char* undoCopy = new char[strlen(text) + 1];
-            // strcpy(undoCopy, text);
-            // undoStack.push(undoCopy);
-            pushStack();
+        if (!redoStackText.empty()) {
+            pushStackText();
+            pushStackCursor();
 
             free(text);
-            text = redoQueue.top();
-            redoQueue.pop();
+            text = redoStackText.top();
+            cursor = redoStackCursor.top();
+            redoStackText.pop();
+            redoStackCursor.pop();
         }
         else {
             cout <<"You are stupid" <<endl;
         }
     }
+
     ~Text() {
         free(text);
-    }
-
-    void getCursor() {
-        cout<<cursor[0] << " " << cursor[1] <<endl;
     }
 };
 
@@ -363,6 +378,5 @@ int main()
                 cout << "This command is not avaible" <<endl;
                 break;
         }
-        text.getCursor();
     }
 }
