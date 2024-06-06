@@ -43,10 +43,13 @@ public:
         text = static_cast<char *>(calloc(10, sizeof(char)));
         buffer = static_cast<char *>(calloc(10, sizeof(char)));
     }
-    void append(char* userText) {
+    void pushStack() {
         char* undoCopy = new char[strlen(text) + 1];
         strcpy(undoCopy, text);
         undoStack.push(undoCopy);
+    }
+    void append(char* userText) {
+        pushStack();
 
         if (strlen(text) + strlen(userText) > sizeof(text)) {
             text = static_cast<char *>(realloc(text, (strlen(text) + strlen(userText)) * sizeof(char)));
@@ -59,19 +62,13 @@ public:
         cout << text << endl;
     }
 
-    void newline() const {
-        // char* undoCopy = new char[strlen(text) + 1];
-        // strcpy(undoCopy, text);
-        // undoStack.push(undoCopy);
-
+    void newline() {
+        pushStack();
         strcat(text, "\n");
     }
 
     void insert(int line, int index, char* userText) {
-        char* undoCopy = new char[strlen(text) + 1];
-        strcpy(undoCopy, text);
-        undoStack.push(undoCopy);
-
+        pushStack();
         int k = 0;
 
         if (strlen(text) + strlen(userText) > sizeof(text)) {
@@ -95,7 +92,7 @@ public:
                 if (text[i] == '\n') {k++;}
             }
         }
-        free(userText);
+        //free(userText);
     }
 
     void search(char* userText) {
@@ -103,7 +100,6 @@ public:
         int line = 0;
         int n = 0;
         int indexes = 0;
-
         int sizeText = strlen(text);
         int sizeInput = strlen(userText);
         for (int i=0; i < sizeText; i++) {
@@ -169,9 +165,7 @@ public:
     }
 
     void replacement(int line, int index, char* userText) {
-        char* undoCopy = new char[strlen(text) + 1];
-        strcpy(undoCopy, text);
-        undoStack.push(undoCopy);
+        pushStack();
 
         int k = 0;
         int sizeInput = strlen(userText);
@@ -191,9 +185,7 @@ public:
     }
 
     void del(int line, int index, int number){
-        char* undoCopy = new char[strlen(text) + 1];
-        strcpy(undoCopy, text);
-        undoStack.push(undoCopy);
+        pushStack();
 
         int k = 0;
         int sizeText = strlen(text);
@@ -214,8 +206,8 @@ public:
     }
 
     void copy(int line, int index, int number) {
+        buffer = static_cast<char *>(realloc(buffer, (strlen(text) + 1) * sizeof(char)));
         int k = 0;
-        //char* buffer = static_cast<char *>(calloc(10, sizeof(char)));
         int sizeText = strlen(text);
         for (int i = 0; i < sizeText; i++) {
             if (k==line) {
@@ -254,9 +246,10 @@ public:
 
     void redo() {
         if (!redoQueue.empty()) {
-            char* undoCopy = new char[strlen(text) + 1];
-            strcpy(undoCopy, text);
-            undoStack.push(undoCopy);
+            // char* undoCopy = new char[strlen(text) + 1];
+            // strcpy(undoCopy, text);
+            // undoStack.push(undoCopy);
+            pushStack();
 
             free(text);
             text = redoQueue.top();
@@ -270,8 +263,6 @@ public:
         free(text);
     }
 };
-
-
 
 int main()
 {
@@ -355,9 +346,12 @@ int main()
                 fflush(stdin);
                 text.replacement(line1, index1, getUserText());
                 break;
+            case 0:
+                cout << "Thank you " <<endl;
+                return 0;
             default:
                 cout << "This command is not avaible" <<endl;
+                break;
         }
     }
-    return 0;
 }
