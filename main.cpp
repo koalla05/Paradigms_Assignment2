@@ -38,10 +38,13 @@ class Text {
     char* buffer;
     stack<char*> undoStack;
     stack<char*> redoQueue;
+    int cursor[2];
 public:
     Text() {
         text = static_cast<char *>(calloc(10, sizeof(char)));
         buffer = static_cast<char *>(calloc(10, sizeof(char)));
+        cursor[0] = 0; //line
+        cursor[1] = 0;  //index
     }
     void pushStack() {
         char* undoCopy = new char[strlen(text) + 1];
@@ -55,6 +58,7 @@ public:
             text = static_cast<char *>(realloc(text, (strlen(text) + strlen(userText)) * sizeof(char)));
         }
         strcat(text, userText);
+        cursor[1] += strlen(userText);
         free(userText);
     }
 
@@ -65,6 +69,8 @@ public:
     void newline() {
         pushStack();
         strcat(text, "\n");
+        cursor[0] += 1;
+        cursor[1] -= cursor[1];
     }
 
     void insert(int line, int index, char* userText) {
@@ -262,6 +268,10 @@ public:
     ~Text() {
         free(text);
     }
+
+    void getCursor() {
+        cout<<cursor[0] << " " << cursor[1] <<endl;
+    }
 };
 
 int main()
@@ -353,5 +363,6 @@ int main()
                 cout << "This command is not avaible" <<endl;
                 break;
         }
+        text.getCursor();
     }
 }
